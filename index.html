@@ -13,18 +13,27 @@ canvas {
 <script>
 var myGamePiece ;
 var mySlider;
+var myBricks = [] ;
 function startGame() {
-    myGamePiece = new component(30, 30, "red", 10, 120);
-    myGamePiece.gravity = -0.05;
-    myScore = new component("30px", "Consolas", "black", 280, 40, "text");
-    mySlider = new component(90 , 30 , "blue" , 0, window.innerHeight - 60);
+	var brickWidth = (window.innerWidth - 20) / 10 ;
+	var brickHeight = 20;
+	for (var j = 0; j <= 5; j++) {
+		for (var i = 0; i < 10; i++) {
+			myBricks.push(new component(brickWidth, brickHeight, "red", i * brickWidth, j * brickHeight));
+		}
+	}
+    myGamePiece = new component(15, 15, "red", 10, 120);
+    myGamePiece.gravitySpeed = 5;
+    myGamePiece.gravity = 0.001;
+    // myScore = new component("30px", "Consolas", "black", 280, 40, "text");
+    mySlider = new component(110 , 10 , "blue" , 0, window.innerHeight - 40);
     myGameArea.start();
 }
 
 var myGameArea = {
     canvas : document.createElement("canvas"),
     start : function() {
-        this.canvas.width = window.innerWidth - 10;
+        this.canvas.width = window.innerWidth - 20;
         this.canvas.height = window.innerHeight - 30;
         this.context = this.canvas.getContext("2d");
         document.body.insertBefore(this.canvas, document.body.childNodes[0]);
@@ -70,6 +79,8 @@ function component(width, height, color, x, y, type) {
         this.y += this.speedY + this.gravitySpeed;
         this.hitBottom();
         this.hitTop(); 
+        this.hitLeft(); 
+        this.hitRight(); 
     }
     this.hitBottom = function() {
         var rockbottom = myGameArea.canvas.height - this.height;
@@ -83,47 +94,85 @@ function component(width, height, color, x, y, type) {
         var rocktop = 0;
         if (this.y < rocktop) {
             this.y = rocktop;
-            this.gravitySpeed = 0;
+            this.gravitySpeed = -this.gravitySpeed;
             this.gravity = -this.gravity;
         }
     }
     this.hitLeft = function() {
         var rocklft = 0;
         if (this.x < rocklft) {
-            this.x = rocktop;
-            this.gravitySpeed = 0;
-            this.gravity = -this.speedX;
+            this.x = rocklft;
+            this.speedX = -this.speedX;
         }
     }
-    //Correct DIS
-    this.hitLeft = function() {
-        var rocklft = 0;
-        if (this.x < rocklft) {
-            this.x = rocktop;
-            this.gravitySpeed = 0;
-            this.gravity = -this.speedY;
+    this.hitRight = function() {
+        var rockryt = myGameArea.canvas.width - this.width;
+        if (this.x > rockryt) {
+            this.x = rockryt;
+            this.speedX = -this.speedX;
         }
     }
-    // this.crashWith = function(otherobj) {
-    //     var myleft = this.x;
-    //     var myright = this.x + (this.width);
-    //     var mytop = this.y;
-    //     var mybottom = this.y + (this.height);
-    //     var otherleft = otherobj.x;
-    //     var otherright = otherobj.x + (otherobj.width);
-    //     var othertop = otherobj.y;
-    //     var otherbottom = otherobj.y + (otherobj.height);
-    //     var crash = true;
-    //     if ((mybottom < othertop) || (mytop > otherbottom) || (myright < otherleft) || (myleft > otherright)) {
-    //         crash = false;
-    //     }
-    //     return crash;
-    // }
+    this.crashWith = function(otherobj) {
+        var myleft = this.x;
+        var myright = this.x + (this.width);
+        var mytop = this.y;
+        var mybottom = this.y + (this.height);
+        var otherleft = otherobj.x;
+        var otherright = otherobj.x + (otherobj.width);
+        var othertop = otherobj.y;
+        var otherbottom = otherobj.y + (otherobj.height);
+        var crash = true;
+        if ((mybottom < othertop) || (myright < otherleft) || (myleft > otherright) || (mytop > otherbottom)) {
+            crash = false;
+        }
+		if (crash){
+			this.y = otherobj.y - otherobj.height;
+			this.gravitySpeed = -this.gravitySpeed;
+			this.gravity = -this.gravity;
+			var tmp = Math.random();
+			if (this.speedX >= 0){
+				this.speedX = tmp * 3;
+			}
+			else{
+				this.speedX = -(tmp * 10);
+			}
+		}        
+    }
+    this.brickExplode = function(otherobj) {
+        var myleft = this.x;
+        var myright = this.x + (this.width);
+        var mytop = this.y;
+        var mybottom = this.y + (this.height);
+        var otherleft = otherobj.x;
+        var otherright = otherobj.x + (otherobj.width);
+        var othertop = otherobj.y;
+        var otherbottom = otherobj.y + (otherobj.height);
+        var crash = true;
+        if ((mybottom < othertop) || (myright < otherleft) || (myleft > otherright) || (mytop > otherbottom)) {
+            crash = false;
+        }
+		if (crash){
+			console.log("true");
+			otherobj.width = 0;
+			otherobj.height = 0;
+			this.y = otherobj.y - otherobj.height;
+			this.gravitySpeed = -this.gravitySpeed;
+			this.gravity = -this.gravity;
+			var tmp = Math.random();
+			if (this.speedX >= 0){
+				this.speedX = tmp * 3;
+			}
+			else{
+				this.speedX = -(tmp * 10);
+			}
+		}        
+    }
 }
 
 function updateGameArea() {
     var x, height, gap, minHeight, maxHeight, minGap, maxGap;
     myGameArea.clear();
+    myGamePiece.crashWith(mySlider);
     // myGameArea.frameNo += 1;
     // if (myGameArea.frameNo == 1 || everyinterval(150)) {
     //     x = myGameArea.canvas.width;
@@ -136,12 +185,20 @@ function updateGameArea() {
     // }
     mySlider.speedX = 0;
     mySlider.speedY = 0; 
-    if (myGameArea.key == 37) {mySlider.speedX = -3; }
-    if (myGameArea.key == 39) {mySlider.speedX = 3; }
+    if (myGameArea.key == 37) {mySlider.speedX = -5; }
+    if (myGameArea.key == 39) {mySlider.speedX = 5; }
     myGamePiece.newPos();
     myGamePiece.update();
     mySlider.newPos();
     mySlider.update();
+	for (var j = 0; j <= 5; j++) {
+    	for (var i = 0; i < 10; i++) {
+    		myGamePiece.brickExplode(myBricks[j*10 + i]);
+			myBricks[j*10 + i].newPos();
+			myBricks[j*10 + i].update();
+		}
+	}
+
 }
 
 function everyinterval(n) {
